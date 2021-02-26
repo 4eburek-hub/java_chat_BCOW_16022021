@@ -73,7 +73,6 @@ public class Server {
         return authService;
     }
 
-
     public void privateMsg(String msg, String nick) {
         for (ClientHandler o : clients) {
             if (o.getNickname().equalsIgnoreCase(nick)) {
