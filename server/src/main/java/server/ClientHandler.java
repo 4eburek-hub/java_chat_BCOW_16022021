@@ -57,20 +57,23 @@ public class ClientHandler {
                     while (true) {
                         String str = in.readUTF();
 
-                        if (str.equals(Command.END)) {
-                            out.writeUTF(Command.END);
-                            break;
-                        }
-                        if (str.startsWith("/w")) {
-                            String[] words = str.split(" ");
-                            String nickoftheReciever = words[1];
-                            String massage = str.substring(3);
-                            server.privateMsg(nickname + ": " + massage, nickoftheReciever);
-                        } else {
-                            server.broadcastMsg(nickname + ": " + str);
-                        }
+                        if (str.startsWith("/")) {
+                            if (str.equals(Command.END)) {
+                                out.writeUTF(Command.END);
+                                break;
+                            }
 
-                        server.broadcastMsg(this, str);
+                            if (str.startsWith(Command.PRIVET_VSG)) {
+                                String[] token = str.split("\\s", 3);
+                                if (token.length < 3) {
+                                    continue;
+                                }
+                                server.privetMsg(this, token[1], token[2]);
+                            }
+                        } else {
+
+                            server.broadcastMsg(this, str);
+                        }
                     }
                 } catch (RuntimeException e) {
                     System.out.println(e.getMessage());
