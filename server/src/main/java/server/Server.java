@@ -1,6 +1,6 @@
 package server;
 
-import com.sun.security.ntlm.Client;
+import commands.Command;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -25,7 +25,11 @@ public class Server {
 
     public Server() {
         clients = new CopyOnWriteArrayList<>();
-        authService = new SimpleAuthServise();
+      //  authService = new SimpleAuthServise();
+        if (!SQLHandler.connect()) {
+            throw new RuntimeException("Не удалось подключиться к БД");
+        }
+        authService = new DBAuthServise();
 
         try {
             server = new ServerSocket(PORT);
@@ -41,6 +45,7 @@ public class Server {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
+            SQLHandler.disconnect();
             try {
                 socket.close();
             } catch (IOException e) {
@@ -56,35 +61,65 @@ public class Server {
 
     public void broadcastMsg(ClientHandler sender, String msg){
         String message = String.format("[ %s ]: %s", sender.getNickname(), msg);
+
+        SQLHandler.addMessage(sender.getNickname(), "null", msg, "once upon a time");
+
         for (ClientHandler c : clients) {
             c.sendMsg(message);
         }
     }
 
+    public void privateMsg(ClientHandler sender,String receiver, String msg){
+        String message = String.format("[ %s ] to [ %s ]: %s", sender.getNickname(), receiver, msg);
+        for (ClientHandler c : clients) {
+            if(c.getNickname().equals(receiver)){
+                c.sendMsg(message);
+
+                SQLHandler.addMessage(sender.getNickname(), receiver, msg, "once upon a time");
+
+                if(!c.equals(sender)){
+                    sender.sendMsg(message);
+                }
+                return;
+            }
+        }
+        sender.sendMsg("not found user: "+ receiver);
+    }
+
     public void subscribe(ClientHandler clientHandler){
         clients.add(clientHandler);
+        broadcastClientlist();
     }
 
     public void unsubscribe(ClientHandler clientHandler){
         clients.remove(clientHandler);
+        broadcastClientlist();
     }
 
     public AuthService getAuthService() {
         return authService;
     }
 
-
-    public void privateMsg(String msg, String nick) {
-        for (ClientHandler o : clients) {
-            if (o.getNickname().equalsIgnoreCase(nick)) {
-                o.sendMsg(msg);
+    public boolean isLoginAuthenticated(String login){
+        for (ClientHandler c : clients) {
+            if(c.getLogin().equals(login)){
+                return true;
             }
         }
+        return false;
     }
 
-    public void broadcastMsg(String msg) {
-        for (ClientHandler o : clients){
-            o.sendMsg(msg);
+    public void broadcastClientlist(){
+        StringBuilder sb = new StringBuilder(Command.CLIENT_LIST);
+
+        for (ClientHandler c : clients) {
+            sb.append(" ").append(c.getNickname());
+        }
+
+        String msg = sb.toString();
+
+        for (ClientHandler c : clients) {
+            c.sendMsg(msg);
         }
     }
 }
