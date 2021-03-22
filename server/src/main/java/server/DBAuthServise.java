@@ -11,6 +11,7 @@ public class DBAuthServise implements AuthService {
         return SQLHandler.registration(login, password, nickname);
     }
 
+
     @Override
     public boolean changeNick(String oldNickname, String newNickname) {
         return SQLHandler.changeNick(oldNickname, newNickname);
