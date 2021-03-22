@@ -24,7 +24,8 @@ public class ClientHandler {
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
 
-            new Thread(() -> {
+
+            server.getExecutorService().execute(() -> {
                 try {
                     // установка сокет тайм аут
                     socket.setSoTimeout(120000);
@@ -142,7 +143,8 @@ public class ClientHandler {
                         e.printStackTrace();
                     }
                 }
-            }).start();
+
+        });
         } catch (IOException e) {
             e.printStackTrace();
         }
